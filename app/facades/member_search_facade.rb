@@ -8,23 +8,23 @@ class MemberSearchFacade
   end
 
   def members
-    # make the API call to Propublica
-    conn = Faraday.new(url: "https://api.propublica.org") do |f|
-      f.headers['X-API-Key'] = ENV['PROPUBLICA_API_KEY']
-      f.adapter  Faraday.default_adapter
+    member_search[:results].map do |profile|
+      Member.new(profile)
     end
+  end
 
-    response = conn.get("/congress/v1/members/house/#{state}/current.json")
-
-    # parse the response
-    search_result = JSON.parse(response.body, symbolize_names: true)
-
-    # build Member objects
-    search_result[:results].map do |result|
-      Member.new(result)
-    end
+  def copyright
+    member_search[:copyright]
   end
 
   private
   attr_reader :state
+
+  def member_search
+    @_member_search ||= service.members_by_state(state)
+  end
+
+  def service
+    @_service ||= PropublicaService.new
+  end
 end
